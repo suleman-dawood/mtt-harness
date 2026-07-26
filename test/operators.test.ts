@@ -55,6 +55,50 @@ describe("generateMutants (JS/TS)", () => {
   });
 });
 
+describe("generateMutants (Python)", () => {
+  const SRC = `def classify(age, active):
+    if age >= 18 and active:
+        return True
+    x = age + 1
+    return False
+`;
+
+  it("swaps comparison and arithmetic operators", async () => {
+    const m = await generateMutants(SRC, "python");
+    expect(m.some((x) => x.original === ">=" && x.replacement === ">")).toBe(
+      true,
+    );
+    expect(m.some((x) => x.original === "+" && x.replacement === "-")).toBe(
+      true,
+    );
+  });
+
+  it("swaps and/or boolean operators", async () => {
+    const m = await generateMutants(SRC, "python");
+    expect(m.some((x) => x.original === "and" && x.replacement === "or")).toBe(
+      true,
+    );
+  });
+
+  it("swaps True/False with correct casing", async () => {
+    const m = await generateMutants(SRC, "python");
+    const t = m.find((x) => x.operator === "boolean-literal" && x.original === "True");
+    expect(t?.replacement).toBe("False");
+  });
+
+  it("negates a condition with `not`", async () => {
+    const m = await generateMutants(SRC, "python");
+    const neg = m.find((x) => x.operator === "negate-condition");
+    expect(neg?.replacement.startsWith("not (")).toBe(true);
+  });
+
+  it("removes a statement with `pass`", async () => {
+    const m = await generateMutants(SRC, "python");
+    const rm = m.find((x) => x.operator === "remove-statement");
+    expect(rm?.replacement).toBe("pass");
+  });
+});
+
 describe("generateMutants (Go)", () => {
   it("swaps operators and boolean literals in Go", async () => {
     const src = `package main

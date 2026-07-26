@@ -10,6 +10,7 @@ const WASM_NAME: Record<Language, string> = {
   typescript: "typescript",
   tsx: "tsx",
   go: "go",
+  python: "python",
 };
 
 const EXT_TO_LANG: Record<string, Language> = {
@@ -22,6 +23,7 @@ const EXT_TO_LANG: Record<string, Language> = {
   ".cts": "typescript",
   ".tsx": "tsx",
   ".go": "go",
+  ".py": "python",
 };
 
 /** Map a file path to a supported built-in grammar, or null if unsupported. */

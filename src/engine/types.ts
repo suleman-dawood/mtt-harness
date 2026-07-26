@@ -1,4 +1,4 @@
-export type Language = "javascript" | "typescript" | "tsx" | "go";
+export type Language = "javascript" | "typescript" | "tsx" | "go" | "python";
 
 /** A single-point source change: replace [startIndex, endIndex) with `replacement`. */
 export interface Mutant {

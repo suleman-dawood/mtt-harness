@@ -2,8 +2,8 @@ import type Parser from "web-tree-sitter";
 import { parse } from "./grammars";
 import type { Language, Mutant } from "./types";
 
-/** Binary operator swaps. Same token spellings across JS/TS and Go. */
-const BINARY_SWAP: Record<string, string> = {
+/** Symbolic binary operator swaps (JS/TS, Go, and Python comparison/arithmetic). */
+const SYMBOL_SWAP: Record<string, string> = {
   ">": ">=",
   ">=": ">",
   "<": "<=",
@@ -20,7 +20,30 @@ const BINARY_SWAP: Record<string, string> = {
   "!==": "===",
 };
 
+/** Word operator swaps (Python `and`/`or`). */
+const WORD_SWAP: Record<string, string> = { and: "or", or: "and" };
+
+/** Boolean literal swaps, case-aware across languages (`True`/`False` in Python). */
+const BOOL_LITERAL: Record<string, string> = {
+  true: "false",
+  false: "true",
+  True: "False",
+  False: "True",
+};
+
 const CONDITION_HOLDERS = new Set(["if_statement", "while_statement"]);
+
+/** First unnamed child whose text is a key in `map` (Python operator token). */
+function operatorChild(
+  node: Parser.SyntaxNode,
+  map: Record<string, string>,
+): Parser.SyntaxNode | null {
+  for (let i = 0; i < node.childCount; i++) {
+    const c = node.child(i);
+    if (c && !c.isNamed && map[c.text] !== undefined) return c;
+  }
+  return null;
+}
 
 function walk(root: Parser.SyntaxNode, visit: (n: Parser.SyntaxNode) => void) {
   const stack: Parser.SyntaxNode[] = [root];
@@ -49,31 +72,50 @@ export async function generateMutants(
   const root = await parse(source, language);
   const mutants: Mutant[] = [];
 
+  const negatePrefix = language === "python" ? "not (" : "!(";
+
+  const pushSwap = (op: Parser.SyntaxNode, map: Record<string, string>) => {
+    mutants.push({
+      operator: "binary-op",
+      line: line(op),
+      startIndex: op.startIndex,
+      endIndex: op.endIndex,
+      original: op.text,
+      replacement: map[op.text],
+    });
+  };
+
   walk(root, (node) => {
     // 1. Binary operator swaps
     if (node.type === "binary_expression") {
+      // JS/TS, Go: operator is a named field
       const op = node.childForFieldName("operator");
-      if (op && BINARY_SWAP[op.text] !== undefined) {
-        mutants.push({
-          operator: "binary-op",
-          line: line(op),
-          startIndex: op.startIndex,
-          endIndex: op.endIndex,
-          original: op.text,
-          replacement: BINARY_SWAP[op.text],
-        });
-      }
+      if (op && SYMBOL_SWAP[op.text] !== undefined) pushSwap(op, SYMBOL_SWAP);
+    } else if (
+      node.type === "comparison_operator" ||
+      node.type === "binary_operator"
+    ) {
+      // Python: operator is an unnamed child token
+      const op = operatorChild(node, SYMBOL_SWAP);
+      if (op) pushSwap(op, SYMBOL_SWAP);
+    } else if (node.type === "boolean_operator") {
+      // Python: `and` / `or`
+      const op = operatorChild(node, WORD_SWAP);
+      if (op) pushSwap(op, WORD_SWAP);
     }
 
-    // 2. Boolean literal swap
-    if (node.type === "true" || node.type === "false") {
+    // 2. Boolean literal swap (case-aware)
+    if (
+      (node.type === "true" || node.type === "false") &&
+      BOOL_LITERAL[node.text] !== undefined
+    ) {
       mutants.push({
         operator: "boolean-literal",
         line: line(node),
         startIndex: node.startIndex,
         endIndex: node.endIndex,
         original: node.text,
-        replacement: node.type === "true" ? "false" : "true",
+        replacement: BOOL_LITERAL[node.text],
       });
     }
 
@@ -87,12 +129,13 @@ export async function generateMutants(
           startIndex: cond.startIndex,
           endIndex: cond.endIndex,
           original: cond.text,
-          replacement: `!(${cond.text})`,
+          replacement: `${negatePrefix}${cond.text})`,
         });
       }
     }
 
-    // 4. Remove an expression statement (e.g. a side-effecting call)
+    // 4. Remove an expression statement (e.g. a side-effecting call).
+    // Python needs a `pass` so a sole-statement block stays valid.
     if (node.type === "expression_statement") {
       mutants.push({
         operator: "remove-statement",
@@ -100,7 +143,7 @@ export async function generateMutants(
         startIndex: node.startIndex,
         endIndex: node.endIndex,
         original: node.text,
-        replacement: "",
+        replacement: language === "python" ? "pass" : "",
       });
     }
   });
