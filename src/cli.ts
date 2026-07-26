@@ -3,16 +3,18 @@ import { join } from "node:path";
 import { parseArgs } from "./args";
 import { guardCommand } from "./commands/guard";
 import { initCommand } from "./commands/init";
+import { sweepCommand } from "./commands/sweep";
 
 const HELP = `mtt — mutation-testing gate for coding agents
 
 Usage:
-  mtt guard <file> --test-cmd "<cmd>" [options]   Gate a file's tests
-  mtt init [--editor <name>]                       Install the skill into editors
+  mtt guard <file> --test-cmd "<cmd>" [options]    Gate one file's tests
+  mtt sweep --since <ref> --test-cmd "<cmd {test}>" Gate every changed file
+  mtt init [--editor <name>]                        Install the skill into editors
   mtt --version
   mtt help
 
-Run "mtt guard" with no args for guard options.`;
+Run "mtt guard" or "mtt sweep" with no args for their options.`;
 
 function version(): string {
   try {
@@ -39,6 +41,8 @@ async function main(): Promise<number> {
   switch (command) {
     case "guard":
       return guardCommand(rest);
+    case "sweep":
+      return sweepCommand(rest);
     case "init":
       return initCommand(rest);
     default:

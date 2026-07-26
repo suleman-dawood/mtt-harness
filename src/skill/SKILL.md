@@ -1,6 +1,6 @@
 ---
 name: mtt-harness
-description: Use when writing, reviewing, or trusting a test suite — especially tests you (the agent) just wrote. Proves tests actually catch bugs via mutation testing, and drives the agent to strengthen weak tests until they pass a mutation-score gate. Trigger on /mtt or /mtt-harness.
+description: Use when writing, reviewing, or trusting a test suite — especially tests you (the agent) just wrote, or to harden the tests on files a branch changed. Proves tests actually catch bugs via mutation testing, and drives the agent to strengthen weak tests until they pass a mutation-score gate. Trigger on /mtt, /mtt-harness, or /mtt-sweep.
 ---
 
 # MTT Harness — prove the tests catch bugs
@@ -68,6 +68,32 @@ mtt guard <source-file> --test-cmd "..." --mutants proposed.json --json
 
 Add semantic mutants that reflect how this code could *actually* be wrong, then
 kill them.
+
+## Sweeping changed files (/mtt-sweep)
+
+To harden the tests on everything a branch changed, work through them in
+budget-sized sections instead of file-by-file by hand.
+
+1. Get the worklist (the CLI maps each changed file to its tests and gates them):
+
+   ```bash
+   mtt sweep --since origin/main --test-cmd "npx vitest run {test}" --budget 15m --json
+   ```
+
+   `{test}` is replaced with each file's auto-discovered test file(s). For
+   Python use `--test-cmd "python3 -m pytest {test}"`, for Go
+   `--test-cmd "go test {test}"`.
+
+2. The JSON `worklist` lists every file below threshold (with its survivors)
+   and every file with `status: "no-tests"`. Work through it:
+   - **Below threshold:** strengthen the tests to kill each survivor, then
+     re-verify that one file with `mtt guard <file> --test-cmd "..."`.
+   - **No tests:** write a focused test file first, then gate it.
+
+3. If the run reports `deferred` files (budget hit), run the same `mtt sweep`
+   again to pick up the next section.
+
+Only report the branch as hardened once a fresh `mtt sweep` shows no failures.
 
 ## Rules
 
