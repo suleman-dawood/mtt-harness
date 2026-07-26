@@ -33,7 +33,9 @@ export function parseDuration(v: string | undefined): number | undefined {
 }
 
 function changedFiles(ref: string, cwd: string): string[] {
-  const out = execFileSync("git", ["diff", "--name-only", ref], {
+  // --relative yields paths relative to cwd and scopes to the cwd subtree, so
+  // this works when the project sits in a subdirectory of the git repo.
+  const out = execFileSync("git", ["diff", "--name-only", "--relative", ref], {
     cwd,
     encoding: "utf8",
   });
