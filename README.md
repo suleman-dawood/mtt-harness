@@ -72,6 +72,22 @@ In Claude Code (or Cursor/etc.):
 The agent runs the gate, reads the survivors, strengthens the tests, and loops
 until the mutation score clears the threshold — no API key, all in-session.
 
+### Harden a whole branch — `mtt sweep`
+
+Gate every file a branch changed, in budget-sized sections. The CLI maps each
+changed source file to its tests (`{test}` is substituted per file), gates them
+until the budget is spent, and defers the rest for the next run:
+
+```bash
+mtt sweep --since origin/main --test-cmd "npx vitest run {test}" --budget 15m
+# Python: --test-cmd "python3 -m pytest {test}"   Go: --test-cmd "go test {test}"
+```
+
+It prints a per-file verdict (passed / below-threshold / no-tests-found /
+deferred) and exits non-zero if anything is below threshold. Add `--json` to get
+a worklist, then run `/mtt-sweep` to have the agent strengthen the flagged files.
+Works even when the project sits in a subdirectory of the git repo.
+
 ### Use it by hand / in CI
 
 Run the gate yourself. **Scope `--test-cmd` to the file's sibling test** so the
