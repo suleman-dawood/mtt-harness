@@ -33,6 +33,22 @@ const BOOL_LITERAL: Record<string, string> = {
 
 const CONDITION_HOLDERS = new Set(["if_statement", "while_statement"]);
 
+const STRING_NODE_TYPES = new Set([
+  "string",
+  "concatenated_string",
+  "template_string",
+]);
+
+/** True when a statement is just a string literal (a docstring). */
+function isStringStatement(node: Parser.SyntaxNode): boolean {
+  const child = node.namedChild(0);
+  return (
+    node.namedChildCount === 1 &&
+    child !== null &&
+    STRING_NODE_TYPES.has(child.type)
+  );
+}
+
 /** First unnamed child whose text is a key in `map` (Python operator token). */
 function operatorChild(
   node: Parser.SyntaxNode,
@@ -135,8 +151,10 @@ export async function generateMutants(
     }
 
     // 4. Remove an expression statement (e.g. a side-effecting call).
+    // Skip string-only statements (docstrings) — removing them never changes
+    // behavior, so they are always equivalent mutants and pure noise.
     // Python needs a `pass` so a sole-statement block stays valid.
-    if (node.type === "expression_statement") {
+    if (node.type === "expression_statement" && !isStringStatement(node)) {
       mutants.push({
         operator: "remove-statement",
         line: line(node),

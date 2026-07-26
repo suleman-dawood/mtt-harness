@@ -97,6 +97,19 @@ describe("generateMutants (Python)", () => {
     const rm = m.find((x) => x.operator === "remove-statement");
     expect(rm?.replacement).toBe("pass");
   });
+
+  it("does not mutate docstrings (equivalent-mutant noise)", async () => {
+    const src = `def f():
+    """This is a docstring."""
+    return 1
+`;
+    const m = await generateMutants(src, "python");
+    expect(
+      m.some(
+        (x) => x.operator === "remove-statement" && x.original.includes("docstring"),
+      ),
+    ).toBe(false);
+  });
 });
 
 describe("generateMutants (Go)", () => {
