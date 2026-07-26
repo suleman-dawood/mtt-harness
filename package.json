@@ -1,0 +1,46 @@
+{
+  "name": "mtt-harness",
+  "version": "0.1.0",
+  "description": "Make your coding agent prove its tests actually catch bugs — a mutation-testing gate as a cross-editor agent skill + CLI.",
+  "keywords": [
+    "mutation-testing",
+    "testing",
+    "ai-agents",
+    "claude-code",
+    "cursor",
+    "agent-skill",
+    "cli"
+  ],
+  "license": "MIT",
+  "author": "Suleman Dawood",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/suleman-dawood/mtt-harness.git"
+  },
+  "type": "commonjs",
+  "bin": {
+    "mtt": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc && node scripts/copy-assets.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "mtt": "node dist/cli.js"
+  },
+  "dependencies": {
+    "tree-sitter-wasms": "0.1.12",
+    "web-tree-sitter": "0.24.4"
+  },
+  "devDependencies": {
+    "@types/node": "20.14.10",
+    "typescript": "5.5.4",
+    "vitest": "2.0.5"
+  }
+}
