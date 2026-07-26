@@ -23,30 +23,39 @@ turning "looks tested" into "provably tested."
 - A test command you can run from the repo root (any runner: `vitest`, `jest`,
   `go test`, `pytest`, …)
 
-## Install
-
-> Not yet published to npm. Install from source:
-
-```bash
-git clone https://github.com/suleman-dawood/mtt-harness
-cd mtt-harness
-npm install
-npm run build
-npm link          # puts the `mtt` command on your PATH
-```
-
-Verify:
-
-```bash
-mtt --version
-```
-
 ## Quick start (5 minutes)
+
+No install needed — run it straight from GitHub with `npx`:
 
 ```bash
 cd ~/your-repo          # any JS/TS or Go repo with tests
-mtt init                # install the /mtt skill into your editor(s)
+npx github:suleman-dawood/mtt-harness init      # install the /mtt skill into your editor(s)
 ```
+
+`npx` clones, builds, and runs it in one step. Then gate a file:
+
+```bash
+npx github:suleman-dawood/mtt-harness guard src/pricing.ts --test-cmd "npx vitest run pricing.test.ts"
+```
+
+`mtt init` detects your agentic editors and installs the skill into each:
+Claude Code · Cursor · Windsurf · OpenCode · Antigravity · Codex/Copilot
+(`AGENTS.md`). Force one with `--editor claude`.
+
+> Prefer a persistent `mtt` command on your PATH? Clone it:
+> `git clone https://github.com/suleman-dawood/mtt-harness && cd mtt-harness && npm install && npm run build && npm link`
+> (Once published to npm, `npx mtt-harness init` will be the short form.)
+
+### Use it with an agent (main flow)
+
+In Claude Code (or Cursor/etc.):
+
+```
+/mtt src/pricing.ts
+```
+
+The agent runs the gate, reads the survivors, strengthens the tests, and loops
+until the mutation score clears the threshold — no API key, all in-session.
 
 `mtt init` detects your agentic editors and installs the skill into each:
 Claude Code · Cursor · Windsurf · OpenCode · Antigravity · Codex/Copilot
