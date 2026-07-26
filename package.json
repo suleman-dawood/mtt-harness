@@ -19,7 +19,11 @@
   },
   "type": "commonjs",
   "bin": {
-    "mtt": "dist/cli.js"
+    "mtt": "dist/cli.js",
+    "mtt-harness": "dist/cli.js"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "files": [
     "dist"
@@ -32,6 +36,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
+    "prepare": "npm run build",
     "mtt": "node dist/cli.js"
   },
   "dependencies": {
